@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ExpenseTracker{% endblock %}</title>
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <style>
+    body { background: #f7f8fa; }
+    .navbar-brand { font-weight: 600; }
+    .progress { height: 10px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">💰 ExpenseTracker</a>
+      {% if current_user.is_authenticated %}
+        <div class="d-flex align-items-center">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-light me-2">Dashboard</a>
+          <a href="{{ url_for('list_expenses') }}" class="btn btn-sm btn-outline-light me-2">All Expenses</a>
+          <a href="{{ url_for('analytics') }}" class="btn btn-sm btn-outline-light me-2">Analytics</a>
+          <a href="{{ url_for('forecast') }}" class="btn btn-sm btn-outline-light me-3">Forecast</a>
+          <span class="text-light me-3 small">{{ current_user.email }}</span>
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+      {% endif %}
+    </div>
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

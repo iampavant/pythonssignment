@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Forecast - ExpenseTracker{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Spend forecast</h4>
+
+{% if result.history_months == 0 %}
+<div class="card shadow-sm">
+  <div class="card-body p-4 text-center text-muted">
+    No expenses logged yet. Add some expenses first to see a forecast.
+  </div>
+</div>
+{% else %}
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm text-center p-3 h-100">
+      <div class="text-muted small">Moving average forecast</div>
+      <div class="fs-3 fw-bold">
+        {% if result.moving_average is not none %}₹{{ result.moving_average }}{% else %}—{% endif %}
+      </div>
+      <div class="text-muted small mt-1">Average of last {{ [result.history_months, 3]|min }} month(s)</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm text-center p-3 h-100">
+      <div class="text-muted small">Linear regression forecast</div>
+      <div class="fs-3 fw-bold">
+        {% if result.linear_regression is not none %}₹{{ result.linear_regression }}{% else %}Needs 2+ months{% endif %}
+      </div>
+      {% if result.trend_slope is defined %}
+        <div class="text-muted small mt-1">
+          Trend: {{ '+' if result.trend_slope >= 0 else '' }}₹{{ result.trend_slope }}/month
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-{{ 'success' if result.confidence == 'high' else ('warning' if result.confidence == 'medium' else 'secondary') }} mb-4">
+  <strong>Confidence: {{ result.confidence|capitalize }}.</strong>
+  {% if result.confidence == 'low' %}
+    Based on only {{ result.history_months }} month(s) of data — forecasts with this little history
+    are unreliable and shown for demonstration only. Log expenses across more months for a meaningful prediction.
+  {% elif result.confidence == 'medium' %}
+    Based on {{ result.history_months }} months of data — a reasonable estimate, but still limited history.
+  {% else %}
+    Based on {{ result.history_months }} months of data — a reasonably grounded estimate.
+  {% endif %}
+  {% if result.next_month_label %}
+    <br>Forecast is for <strong>{{ result.next_month_label }}</strong>.
+  {% endif %}
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h6 class="mb-3">Monthly spend history</h6>
+    <canvas id="forecastChart" height="90"></canvas>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Month</th><th>Total spend</th></tr>
+      </thead>
+      <tbody>
+        {% for month, total in monthly_totals.items() %}
+        <tr><td>{{ month }}</td><td>₹{{ total }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+  const labels = {{ monthly_totals.keys()|list|tojson }};
+  const values = {{ monthly_totals.values()|list|tojson }};
+  {% if result.next_month_label %}
+    labels.push({{ result.next_month_label|tojson }});
+    values.push(null);
+  {% endif %}
+
+  const datasets = [{
+    label: 'Actual monthly spend (₹)',
+    data: values,
+    borderColor: '#212529',
+    backgroundColor: '#212529',
+    tension: 0.2,
+  }];
+
+  {% if result.linear_regression is not none %}
+  const lrData = new Array(values.length - 1).fill(null);
+  lrData.push({{ result.linear_regression }});
+  datasets.push({
+    label: 'Linear regression forecast (₹)',
+    data: lrData,
+    borderColor: '#dc3545',
+    backgroundColor: '#dc3545',
+    pointRadius: 6,
+    showLine: false,
+  });
+  {% endif %}
+
+  {% if result.moving_average is not none %}
+  const maData = new Array(values.length - 1).fill(null);
+  maData.push({{ result.moving_average }});
+  datasets.push({
+    label: 'Moving average forecast (₹)',
+    data: maData,
+    borderColor: '#0d6efd',
+    backgroundColor: '#0d6efd',
+    pointRadius: 6,
+    showLine: false,
+  });
+  {% endif %}
+
+  new Chart(document.getElementById('forecastChart'), {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+
+{% endif %}
+{% endblock %}

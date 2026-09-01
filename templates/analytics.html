@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Analytics - ExpenseTracker{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Analytics</h4>
+
+{% if not monthly_totals %}
+<div class="card shadow-sm">
+  <div class="card-body p-4 text-center text-muted">
+    No expenses logged yet. Add some expenses first to see analytics.
+  </div>
+</div>
+{% else %}
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h6 class="mb-3">Monthly spend</h6>
+    <canvas id="monthlyChart" height="90"></canvas>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="mb-3">Yearly spend</h6>
+        <canvas id="yearlyChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="mb-3">Spend by category (all time)</h6>
+        <canvas id="categoryChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ monthly_totals.keys()|list|tojson }},
+      datasets: [{
+        label: 'Monthly spend (₹)',
+        data: {{ monthly_totals.values()|list|tojson }},
+        backgroundColor: '#212529'
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  new Chart(document.getElementById('yearlyChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ yearly_totals.keys()|list|tojson }},
+      datasets: [{
+        label: 'Yearly spend (₹)',
+        data: {{ yearly_totals.values()|list|tojson }},
+        backgroundColor: '#0d6efd'
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ category_totals.keys()|list|tojson }},
+      datasets: [{
+        label: 'Spend by category (₹)',
+        data: {{ category_totals.values()|list|tojson }},
+        backgroundColor: '#fd7e14'
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } }
+    }
+  });
+</script>
+
+{% endif %}
+{% endblock %}

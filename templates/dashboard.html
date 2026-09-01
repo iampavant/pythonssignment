@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - ExpenseTracker{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">{{ month_name }} overview</h4>
+  <a href="{{ url_for('add_expense') }}" class="btn btn-dark btn-sm">+ Add expense</a>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm text-center p-3">
+      <div class="text-muted small">Spent this month</div>
+      <div class="fs-4 fw-bold">₹{{ total_month }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm text-center p-3">
+      <div class="text-muted small">Monthly budget</div>
+      <div class="fs-4 fw-bold">₹{{ budget }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm text-center p-3">
+      <div class="text-muted small">Remaining</div>
+      <div class="fs-4 fw-bold {{ 'text-danger' if remaining < 0 else 'text-success' }}">₹{{ remaining }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="small text-muted">Set monthly budget</span>
+      {% if percent_used is not none %}
+        <span class="small {{ 'text-danger' if percent_used >= 100 else 'text-muted' }}">{{ percent_used }}% used</span>
+      {% endif %}
+    </div>
+    <form method="POST" action="{{ url_for('set_budget') }}" class="d-flex gap-2 mb-3">
+      <input type="number" step="0.01" name="monthly_budget" class="form-control form-control-sm"
+             value="{{ budget }}" placeholder="e.g. 10000">
+      <button type="submit" class="btn btn-sm btn-outline-dark">Update</button>
+    </form>
+    {% if percent_used is not none %}
+    <div class="progress">
+      <div class="progress-bar {{ 'bg-danger' if percent_used >= 100 else 'bg-dark' }}"
+           style="width: {{ [percent_used, 100]|min }}%"></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if chart_labels %}
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h6 class="mb-3">Spending by category (this month)</h6>
+    <canvas id="categoryChart" height="90"></canvas>
+  </div>
+</div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Recent expenses</h6>
+      <a href="{{ url_for('list_expenses') }}" class="small">View all</a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Title</th><th>Category</th><th>Date</th><th>Amount</th></tr>
+      </thead>
+      <tbody>
+        {% for e in recent_expenses %}
+        <tr>
+          <td>{{ e.title }}</td>
+          <td><span class="badge bg-light text-dark">{{ e.category }}</span></td>
+          <td class="small text-muted">{{ e.expense_date }}</td>
+          <td>₹{{ e.amount }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">No expenses yet. Add one to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if chart_labels %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+  const ctx = document.getElementById('categoryChart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ chart_labels|tojson }},
+      datasets: [{
+        label: 'Amount (₹)',
+        data: {{ chart_values|tojson }},
+        backgroundColor: '#212529'
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+{% endif %}
+
+{% endblock %}

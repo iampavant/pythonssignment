@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if expense else 'Add' }} expense - ExpenseTracker{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="mb-3">{{ 'Edit' if expense else 'Add' }} expense</h4>
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" required
+                   value="{{ expense.title if expense else '' }}" placeholder="e.g. Groceries">
+          </div>
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label class="form-label">Amount (₹)</label>
+              <input type="number" step="0.01" name="amount" class="form-control" required
+                     value="{{ expense.amount if expense else '' }}">
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-select">
+                {% for c in categories %}
+                  <option value="{{ c }}" {{ 'selected' if expense and expense.category == c else '' }}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Date</label>
+            <input type="date" name="expense_date" class="form-control" required
+                   value="{{ expense.expense_date if expense else today }}" max="{{ today }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Note (optional)</label>
+            <input type="text" name="note" class="form-control" value="{{ expense.note if expense else '' }}">
+          </div>
+          <button type="submit" class="btn btn-dark w-100">{{ 'Save changes' if expense else 'Add expense' }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
