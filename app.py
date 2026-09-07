@@ -7,6 +7,7 @@ from flask import Flask, render_template, redirect, url_for, request, flash, jso
 from flask_login import (
     LoginManager, login_user, login_required, logout_user, current_user
 )
+app = Flask(__name__)
 
 from config import Config
 from models import db, User, Expense, CATEGORIES
